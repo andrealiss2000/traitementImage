@@ -115,70 +115,54 @@ public class TraitementImagesUtils {
 		 * @param greyImage
 		 * @return
 		 */
-		public static double[][][] getHistogram(Image image) {
+		public static double[][] getHistogram(Image image) {
 			ByteImage img = (ByteImage) image;
-			double[][][] histogram = new double[256][256][256];
+			double[][] histogram = new double[256][3];
 			
 			//initialisation de toutes les cases à 0
-			for(int i=0; i < histogram[0].length; i++) {
-				for(int j =0;j<histogram[1].length; j++) {
-					for(int k=0;k< histogram[2].length; k++) {
-						histogram[i][j][k] =0;
-						//System.out.println(histogram[i][j][k]); 
-					}
-				}
-				
+			for(int i=0; i < histogram.length; i++) {
+					histogram[i][0] =0;
+					histogram[i][1] =0;
+					histogram[i][2] =0;
 			}
-			
 			
 			//parcourir l'ensemble des pixels 
 			for(int x=0; x<img.getXDim(); x++) {
-			for(int y=0; y<img.getYDim();y++) {
-				int r = img.getPixelXYBByte(x, y, 0); 
-				int g = img.getPixelXYBByte(x, y, 1); 
-				int b = img.getPixelXYBByte(x, y, 2); 
-				histogram[r][g][b] += 1;
+				for(int y=0; y<img.getYDim();y++) {
+					int r = img.getPixelXYBByte(x, y, 0); 
+					int g = img.getPixelXYBByte(x, y, 1); 
+					int b = img.getPixelXYBByte(x, y, 2); 
+					
+					histogram[r][0] +=1; 
+					histogram[g][1] +=1; 
+					histogram[b][2] +=1; 
+					
 				}
 			}
 			
-			
-				
-
 			return histogram;
 			
 		}
 	
 		
-		public static double[][][] discretize(double[][][] histogram){
-			double[][][] newHistogram = new double[88][88][88];
+		public static double[][] discretize(double[][] histogram){
+			double[][] newHistogram = new double [8][3];
 			
-			
-			//rgb(5,5,5) + rgb(85,15,65) + rgb(56,55,53) 
-			//rgb(1,1,1) 
-			
-			//16 777 216 de barres => 16 millions de valeurs rgb
-			//671 089 barres 
-			//racine cube de 671 089 = 88
-			
-			//diviser par 10 ce nombre de barres
 			int start = 0;
-			int stop = 25;
-			for(int i=0; i < newHistogram[0].length; i++) {
-				for(int j =0;j<newHistogram[1].length; j++) {
-					for(int k=0;k< newHistogram[2].length; k++) {
-						double r = get25values(histogram, start, stop); 
-						newHistogram[i][j][k] = r; 
-						System.out.println("START : "+ start + " STOP : "+ stop + " = " + newHistogram[i][j][k]);
-						
-						//System.out.println(newHistogram[i][j][k]);
-						start +=25; 
-						stop +=25;
-						
-						
-					}
-				}
+			int stop = 32;
+			for(int i=0; i < newHistogram.length; i++) {
+				double r = getRvalues(histogram, start, stop);
+				double g = getGvalues(histogram, start, stop);
+				double b = getBvalues(histogram, start, stop);
+				newHistogram[i][0] = r;
+				newHistogram[i][1] = g;
+				newHistogram[i][2] = b;
+				start+=32; 
+				stop+=32;
 				
 			}
+			
+		
 			return newHistogram;
 		}
 		
@@ -190,32 +174,65 @@ public class TraitementImagesUtils {
 		 * @param stop
 		 * @return
 		 */
-		public static double get25values(double[][][] histogram,int start,  int stop) {
+		public static double getRvalues(double[][] histogram,int start,  int stop) {
 			double cpt = 0; 
-			for(int i=start;i<stop;i++) {
-				for(int j=start;j<stop;j++) {
-					for(int k=start; k<stop;k++) {
-						cpt+= histogram[i][j][k];
-						System.out.println("LES INDICES : " + i+ " "+ j+ " "+ k);
-					}
+			if(start >=0 ){
+				for(int i=start;i<stop;i++) {
+					cpt+= histogram[i][0];
 				}
+				return cpt;
 			}
-			return cpt;
+			return 0.0;
 		}
+		
+		/**
+		 * Obtenir les valeurs dans un interval donné
+		 * @param histogram
+		 * @param start
+		 * @param stop
+		 * @return
+		 */
+		public static double getGvalues(double[][] histogram,int start,  int stop) {
+			double cpt = 0; 
+			if(start >=0 ){
+				for(int i=start;i<stop;i++) {
+					cpt+= histogram[i][1];
+				}
+				return cpt;
+			}
+			return 0.0;
+		}
+		
+		/**
+		 * Obtenir les valeurs dans un interval donné
+		 * @param histogram
+		 * @param start
+		 * @param stop
+		 * @return
+		 */
+		public static double getBvalues(double[][] histogram,int start,  int stop) {
+			double cpt = 0; 
+			if(start >=0){
+				for(int i=start;i<stop;i++) {
+					cpt+= histogram[i][2];
+				}
+				return cpt;
+			}
+			return 0.0;
+		}
+		
 		
 	
 	
-	public static void displayHistogram(double[][][] histogram) {
+	public static void displayHistogram(double[][] histogram) {
 		
 		//initialisation de toutes les cases à 0
 		StringBuilder s = new StringBuilder();
-		for(int i=0; i < histogram[0].length; i++) {
+		System.out.println("taille histo : " + histogram.length);
+		for(int i=0; i < histogram.length; i++) {
 			for(int j =0;j<histogram[1].length; j++) {
-				for(int k=0;k< histogram[2].length; k++) {
-					s.append(histogram[i][j][k]);
+					s.append(histogram[i][j]);
 					s.append(" ");
-				}
-				s.append("\n");
 			}
 			s.append("\n");
 		}
