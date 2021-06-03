@@ -226,7 +226,7 @@ public class TraitementImagesUtils {
 		 * @param histogram
 		 * @param nbPixels
 		 */
-		public static void normalise(double[][] histogram, int nbPixels) {
+		public static double[][] normalise(double[][] histogram, int nbPixels) {
 			double[][] newHistogram = new double[8][3];
 			for(int i=0; i< histogram.length; i++) {
 				for(int j =0; j <histogram[0].length; j++) {
@@ -234,6 +234,8 @@ public class TraitementImagesUtils {
 					
 				}
 			}
+			
+			return newHistogram;
 		}
 		
 		

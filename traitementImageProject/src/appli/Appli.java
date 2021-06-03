@@ -25,6 +25,11 @@ public class Appli {
 		double[][] newHisto = TraitementImagesUtils.discretize(histo); 
 		TraitementImagesUtils.displayHistogram(newHisto);
 		
+		//test normalisation 
+		int nbPixels = result.getNumberOfPresentPixel();
+		TraitementImagesUtils.displayHistogram(TraitementImagesUtils.normalise(newHisto, nbPixels));
+		
+		
 		
 	
 	
