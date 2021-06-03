@@ -1,6 +1,11 @@
 package traitementImageProject;
 
+import java.io.File;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 import fr.unistra.pelican.ByteImage;
 import fr.unistra.pelican.Image;
@@ -238,9 +243,69 @@ public class TraitementImagesUtils {
 			return newHistogram;
 		}
 		
+		public static void getSimilarImages(Image query) {
+			
+			//récupération des images
+			List<File> dbFiles = new ArrayList<>();//liste de toutes les images à comparer
+			//récupérer toutes les images 
+			 File directoryPath = new File("/traitementImageProject/database");
+			//List of all files and directories
+			 File filesList[] = directoryPath.listFiles();
+			 for(File file : filesList) {
+				 File innerFilesList[]; 
+				 if(file.isDirectory()) {
+					 dbFiles.addAll(Arrays.asList(file.listFiles()));
+				 }else if(file.isFile()) dbFiles.add(file);
+		      }
+			 
+			 processImages(dbFiles, query);
+		}
+		
 		
 	
 	
+	private static Map processImages(List<File> dbFiles, Image queryImage) {
+		double[][] queryHistogram = getHistogram(queryImage);
+		Map distances = new TreeMap<>();
+		//pré-traitement des images à comparer 
+			for(File file : dbFiles) {
+				Image img = readImage(file.getAbsolutePath());
+				Image filteredImage = filtreMedian(img);
+				double[][] histogram = normalise(discretize(getHistogram(filteredImage)), img.getNumberOfPresentPixel());
+				double dist = getDistance(queryHistogram, histogram);
+				distances.put(dist, file.getName());
+			}
+			
+			return distances;
+		}
+
+
+	/**
+	 * Calcul de la distance entre deux histogrammes
+	 * @param histogramQuery
+	 * @param histogramImage
+	 * @return
+	 */
+	private static double getDistance(double[][] histogramQuery, double[][] histogramImage) {
+		double sumR = 0; 
+		double sumG = 0;
+		double sumB = 0;
+		if(histogramImage.length == histogramQuery.length) {
+			for(int i = 0; i <histogramQuery.length; i++) {
+				sumR+=Math.pow((histogramImage[i][0] - histogramQuery[i][0]), 2);
+				sumG+=Math.pow((histogramImage[i][1] - histogramQuery[i][1]), 2);
+				sumB+=Math.pow((histogramImage[i][2] - histogramQuery[i][2]), 2);
+				
+			}
+			double distanceR = Math.sqrt(sumR); 
+			double distanceG = Math.sqrt(sumG); 
+			double distanceB = Math.sqrt(sumB); 
+			return distanceR+distanceG+distanceB;
+		}
+		
+		return 0.0;
+	}
+
 	public static void displayHistogram(double[][] histogram) {
 		
 		//initialisation de toutes les cases à 0
