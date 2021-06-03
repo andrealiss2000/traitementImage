@@ -221,6 +221,21 @@ public class TraitementImagesUtils {
 			return 0.0;
 		}
 		
+		/**
+		 * Normalisation d'un histogramme
+		 * @param histogram
+		 * @param nbPixels
+		 */
+		public static void normalise(double[][] histogram, int nbPixels) {
+			double[][] newHistogram = new double[8][3];
+			for(int i=0; i< histogram.length; i++) {
+				for(int j =0; j <histogram[0].length; j++) {
+					newHistogram[i][j]= histogram[i][j]/nbPixels;
+					
+				}
+			}
+		}
+		
 		
 	
 	
