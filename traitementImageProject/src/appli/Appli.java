@@ -1,5 +1,7 @@
 package appli;
 
+import java.util.Map;
+
 import fr.unistra.pelican.Image;
 import fr.unistra.pelican.algorithms.visualisation.Viewer2D;
 import traitementImageProject.HistogramTools;
@@ -30,7 +32,13 @@ public class Appli {
 		TraitementImagesUtils.displayHistogram(TraitementImagesUtils.normalise(newHisto, nbPixels));
 		
 		//test similarité
-		System.out.println(TraitementImagesUtils.getSimilarImages(result));
+		
+		Map<Double, String> similar = TraitementImagesUtils.getSimilarImages(result);
+		 for (Map.Entry<Double, String> entry : similar.entrySet()) {
+		        System.out.println("Distance : " + entry.getKey() + " Fichier : " + entry.getValue());
+		    }
+		       
+		
 		
 		
 	

@@ -3,6 +3,7 @@ package traitementImageProject;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -257,9 +258,18 @@ public class TraitementImagesUtils {
 					 dbFiles.addAll(Arrays.asList(file.listFiles()));
 				 }else if(file.isFile()) dbFiles.add(file);
 		      }
-			 System.out.println("NB IMAGES DB :" + dbFiles.size());
+				Map<Double,String> result = new TreeMap<>(Comparator.reverseOrder());
+			 Map<Double,String> distances = processImages(dbFiles, query);
+			 int cpt =0; 
+			 for (Map.Entry<Double, String> entry : distances.entrySet()) {
+				 if(cpt < 10) {
+					 result.put(entry.getKey(), entry.getValue());
+					 cpt++;
+				 }
+			       
+			    }
 			 
-			return processImages(dbFiles, query);
+			return result;
 		}
 		
 		
@@ -267,7 +277,8 @@ public class TraitementImagesUtils {
 	
 	private static Map processImages(List<File> dbFiles, Image queryImage) {
 		double[][] queryHistogram = getHistogram(queryImage);
-		Map distances = new TreeMap<>();
+		queryHistogram = normalise(discretize(getHistogram(queryImage)), queryImage.getNumberOfPresentPixel());
+		Map<Double,String> distances = new TreeMap<>();
 		//pré-traitement des images à comparer 
 			for(File file : dbFiles) {
 				Image img = readImage(file.getAbsolutePath());
@@ -276,9 +287,11 @@ public class TraitementImagesUtils {
 					double[][] histogram = normalise(discretize(getHistogram(filteredImage)), img.getNumberOfPresentPixel());
 					double dist = getDistance(queryHistogram, histogram);
 					distances.put(dist, file.getName());
+					
 				}
 				
 			}
+			
 			
 			return distances;
 		}
