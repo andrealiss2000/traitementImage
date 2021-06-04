@@ -243,12 +243,12 @@ public class TraitementImagesUtils {
 			return newHistogram;
 		}
 		
-		public static void getSimilarImages(Image query) {
+		public static Map getSimilarImages(Image query) {
 			
 			//récupération des images
 			List<File> dbFiles = new ArrayList<>();//liste de toutes les images à comparer
 			//récupérer toutes les images 
-			 File directoryPath = new File("/traitementImageProject/database");
+			 File directoryPath = new File("E:\\Licence IOT\\PERIODE E\\Programmation Avancée\\workspace\\traitementImageOld\\traitementImageProject\\database");
 			//List of all files and directories
 			 File filesList[] = directoryPath.listFiles();
 			 for(File file : filesList) {
@@ -257,8 +257,9 @@ public class TraitementImagesUtils {
 					 dbFiles.addAll(Arrays.asList(file.listFiles()));
 				 }else if(file.isFile()) dbFiles.add(file);
 		      }
+			 System.out.println("NB IMAGES DB :" + dbFiles.size());
 			 
-			 processImages(dbFiles, query);
+			return processImages(dbFiles, query);
 		}
 		
 		
@@ -270,10 +271,13 @@ public class TraitementImagesUtils {
 		//pré-traitement des images à comparer 
 			for(File file : dbFiles) {
 				Image img = readImage(file.getAbsolutePath());
-				Image filteredImage = filtreMedian(img);
-				double[][] histogram = normalise(discretize(getHistogram(filteredImage)), img.getNumberOfPresentPixel());
-				double dist = getDistance(queryHistogram, histogram);
-				distances.put(dist, file.getName());
+				if(img.getBDim() == 3) {
+					Image filteredImage = filtreMedian(img);
+					double[][] histogram = normalise(discretize(getHistogram(filteredImage)), img.getNumberOfPresentPixel());
+					double dist = getDistance(queryHistogram, histogram);
+					distances.put(dist, file.getName());
+				}
+				
 			}
 			
 			return distances;
