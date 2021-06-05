@@ -9,14 +9,21 @@ import fr.unistra.pelican.algorithms.visualisation.Viewer2D;
 import traitementImageProject.HistogramTools;
 import traitementImageProject.Indexation;
 import traitementImageProject.NoiseTools;
+import traitementImageProject.QualityEvaluator;
 import traitementImageProject.TraitementImagesUtils;
 
 public class Appli {
 	
+	private static String QUERY_CATEGORY="motos";
+	
 	public static void main(String[] args) {
+		if(args.length!=0) {
+			QUERY_CATEGORY = args[0];
+		}else {
+			System.out.println("Veuillez indiquer en paramètre la catégorie de l'image de requête");
+			//return;
+		}
 		
-		//test de lecture d'image 
-		//TraitementImagesUtils.readImage("E:/Licence IOT/PERIODE E/Programmation Avancée/workspace/traitementImage/traitementImageProject/database/broad/0001.png");
 		
 		//Test filtre médian 
 		Image couleur = TraitementImagesUtils.readImage("C:\\Users\\Andréa\\Desktop\\maldive.jpg");
@@ -39,12 +46,15 @@ public class Appli {
 	
 		Indexation.writeHistograms();
 		result = TraitementImagesUtils.getImageQuery();
-		Map<Double, String> similar = TraitementImagesUtils.getSimilarImages(result);
-		for (Map.Entry<Double, String> entry : similar.entrySet()) {
-	        System.out.println("Distance : " + entry.getKey() + " Fichier : " + entry.getValue());
-	    }
+		if(result.getBDim() == 3) {
+			Map<Double, String> similar = TraitementImagesUtils.getSimilarImages(result);
+			for (Map.Entry<Double, String> entry : similar.entrySet()) {
+		        System.out.println("Distance : " + entry.getKey() + " Fichier : " + entry.getValue());
+		    }
+			
+			System.out.println("Qualité du système : "+ QualityEvaluator.evaluate(QUERY_CATEGORY, similar) + "% de fiabilité");
+		}
 		
-	
 	
 	}
 
