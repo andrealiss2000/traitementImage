@@ -2,9 +2,12 @@ package appli;
 
 import java.util.Map;
 
+import javax.media.jai.operator.MinDescriptor;
+
 import fr.unistra.pelican.Image;
 import fr.unistra.pelican.algorithms.visualisation.Viewer2D;
 import traitementImageProject.HistogramTools;
+import traitementImageProject.Indexation;
 import traitementImageProject.NoiseTools;
 import traitementImageProject.TraitementImagesUtils;
 
@@ -32,14 +35,14 @@ public class Appli {
 		TraitementImagesUtils.displayHistogram(TraitementImagesUtils.normalise(newHisto, nbPixels));
 		
 		//test similarité
-		
+			       
+	
+		Indexation.writeHistograms();
+		result = TraitementImagesUtils.getImageQuery();
 		Map<Double, String> similar = TraitementImagesUtils.getSimilarImages(result);
-		 for (Map.Entry<Double, String> entry : similar.entrySet()) {
-		        System.out.println("Distance : " + entry.getKey() + " Fichier : " + entry.getValue());
-		    }
-		       
-		
-		
+		for (Map.Entry<Double, String> entry : similar.entrySet()) {
+	        System.out.println("Distance : " + entry.getKey() + " Fichier : " + entry.getValue());
+	    }
 		
 	
 	

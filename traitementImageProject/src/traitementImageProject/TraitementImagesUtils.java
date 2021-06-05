@@ -1,11 +1,13 @@
 package traitementImageProject;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Scanner;
 import java.util.TreeMap;
 
 import fr.unistra.pelican.ByteImage;
@@ -13,6 +15,14 @@ import fr.unistra.pelican.Image;
 import fr.unistra.pelican.algorithms.io.ImageLoader;
 
 public class TraitementImagesUtils {
+	private static int SIZE_HISTO=10;
+	private static String DB_PATH="database\\";
+	private static String QUERY_PATH="query\\";
+	private static int FACTOR=25;
+
+
+
+
 	/**
 	 * Lecture d'une image
 	 * @param absolutePath
@@ -152,10 +162,10 @@ public class TraitementImagesUtils {
 	
 		
 		public static double[][] discretize(double[][] histogram){
-			double[][] newHistogram = new double [8][3];
+			double[][] newHistogram = new double [SIZE_HISTO][3];
 			
 			int start = 0;
-			int stop = 32;
+			int stop = FACTOR;
 			for(int i=0; i < newHistogram.length; i++) {
 				double r = getRvalues(histogram, start, stop);
 				double g = getGvalues(histogram, start, stop);
@@ -163,8 +173,8 @@ public class TraitementImagesUtils {
 				newHistogram[i][0] = r;
 				newHistogram[i][1] = g;
 				newHistogram[i][2] = b;
-				start+=32; 
-				stop+=32;
+				start+=FACTOR; 
+				stop+=FACTOR;
 				
 			}
 			
@@ -233,7 +243,7 @@ public class TraitementImagesUtils {
 		 * @param nbPixels
 		 */
 		public static double[][] normalise(double[][] histogram, int nbPixels) {
-			double[][] newHistogram = new double[8][3];
+			double[][] newHistogram = new double[SIZE_HISTO][3];
 			for(int i=0; i< histogram.length; i++) {
 				for(int j =0; j <histogram[0].length; j++) {
 					newHistogram[i][j]= histogram[i][j]/nbPixels;
@@ -249,7 +259,7 @@ public class TraitementImagesUtils {
 			//récupération des images
 			List<File> dbFiles = new ArrayList<>();//liste de toutes les images à comparer
 			//récupérer toutes les images 
-			 File directoryPath = new File("E:\\Licence IOT\\PERIODE E\\Programmation Avancée\\workspace\\traitementImageOld\\traitementImageProject\\database");
+			 File directoryPath = new File(DB_PATH);
 			//List of all files and directories
 			 File filesList[] = directoryPath.listFiles();
 			 for(File file : filesList) {
@@ -259,7 +269,8 @@ public class TraitementImagesUtils {
 				 }else if(file.isFile()) dbFiles.add(file);
 		      }
 				Map<Double,String> result = new TreeMap<>(Comparator.reverseOrder());
-			 Map<Double,String> distances = processImages(dbFiles, query);
+			 //Map<Double,String> distances = processImages(dbFiles, query);
+			 Map<Double,String> distances = processImagesFile(query);
 			 int cpt =0; 
 			 for (Map.Entry<Double, String> entry : distances.entrySet()) {
 				 if(cpt < 10) {
@@ -296,6 +307,43 @@ public class TraitementImagesUtils {
 			return distances;
 		}
 
+		public static Map processImagesFile(Image queryImage) {
+			double[][] queryHistogram = getHistogram(queryImage);
+			queryHistogram = normalise(discretize(getHistogram(queryImage)), queryImage.getNumberOfPresentPixel());
+			Map<Double,String> distances = new TreeMap<>();
+			
+			//lecture du fichier 
+			try {
+			      File file = new File(Indexation.getINDEXES_PATH());
+			      Scanner myReader = new Scanner(file);
+			      while (myReader.hasNextLine()) {
+			        String line = myReader.nextLine();
+			        String[] data = line.split(Indexation.getFILE_SEPARATOR());
+			        if(data!=null) {
+			        	 String fileName = data[0]; 
+			        	 double[][] histogram = new double[SIZE_HISTO][3];
+			        	 int cpt=0;
+			        	 for(int i=1; i<data.length; i++) {
+			        		 histogram[cpt][0] = Double.valueOf(data[i].split(Indexation.getRGB_SEPARATOR())[0]);
+			        		 histogram[cpt][1] = Double.valueOf(data[i].split(Indexation.getRGB_SEPARATOR())[1]);
+			        		 histogram[cpt][2] = Double.valueOf(data[i].split(Indexation.getRGB_SEPARATOR())[2]);
+			        		 double dist = getDistance(queryHistogram, histogram);
+			     			 distances.put(dist, fileName);
+			        		 cpt++;
+			        	 }
+			        }
+			       
+			      }
+			      myReader.close();
+			    } catch (FileNotFoundException e) {
+			      System.out.println("An error occurred.");
+			      e.printStackTrace();
+			    }
+			
+			
+			return distances; 
+			
+		}
 
 	/**
 	 * Calcul de la distance entre deux histogrammes
@@ -340,7 +388,27 @@ public class TraitementImagesUtils {
 	}
 	
 	
+	public static Image getImageQuery() {
+		 File directoryPath = new File(QUERY_PATH);
+			//List of all files and directories
+			 File filesList[] = directoryPath.listFiles();
+			 for(File file : filesList) {
+				 if(!file.isDirectory()) {
+					return readImage(file.getAbsolutePath());
+				 }
+		      }
+			 System.out.println("Problème lors du chargement de l'image requête");
+			 return null;
+		
+	}
 	
+	
+	
+	public static String getDB_PATH() {
+		return DB_PATH;
+	}
+
+
 	
 	
 	
