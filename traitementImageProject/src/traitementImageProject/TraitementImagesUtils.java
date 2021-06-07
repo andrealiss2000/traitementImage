@@ -327,10 +327,11 @@ public class TraitementImagesUtils {
 			        		 histogram[cpt][0] = Double.valueOf(data[i].split(Indexation.getRGB_SEPARATOR())[0]);
 			        		 histogram[cpt][1] = Double.valueOf(data[i].split(Indexation.getRGB_SEPARATOR())[1]);
 			        		 histogram[cpt][2] = Double.valueOf(data[i].split(Indexation.getRGB_SEPARATOR())[2]);
-			        		 double dist = getDistance(queryHistogram, histogram);
-			     			 distances.put(dist, fileName);
+			        		 
 			        		 cpt++;
 			        	 }
+			        	 double dist = getDistance(queryHistogram, histogram);
+		     			 distances.put(dist, fileName);
 			        }
 			       
 			      }
@@ -375,7 +376,6 @@ public class TraitementImagesUtils {
 		
 		//initialisation de toutes les cases à 0
 		StringBuilder s = new StringBuilder();
-		System.out.println("taille histo : " + histogram.length);
 		for(int i=0; i < histogram.length; i++) {
 			for(int j =0;j<histogram[1].length; j++) {
 					s.append(histogram[i][j]);
@@ -383,7 +383,6 @@ public class TraitementImagesUtils {
 			}
 			s.append("\n");
 		}
-		System.out.println(s);
 		
 	}
 	
@@ -402,6 +401,20 @@ public class TraitementImagesUtils {
 		
 	}
 	
+	
+	public static String getImageQueryPath() {
+		 File directoryPath = new File(QUERY_PATH);
+			//List of all files and directories
+			 File filesList[] = directoryPath.listFiles();
+			 for(File file : filesList) {
+				 if(!file.isDirectory()) {
+					return file.getAbsolutePath();
+				 }
+		      }
+			 System.out.println("Problème lors du chargement de l'image requête");
+			 return null;
+		
+	}
 	
 	
 	public static String getDB_PATH() {
