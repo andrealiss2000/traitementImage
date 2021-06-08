@@ -48,7 +48,7 @@ public class Indexation {
 				for(File file : dbFiles) {
 					Image img = TraitementImagesUtils.readImage(file.getAbsolutePath());
 					if(img.getBDim() == 3) {
-						Image filteredImage = TraitementImagesUtils.filtreMedian(img);
+						Image filteredImage = img;
 						double[][] histogram = TraitementImagesUtils.normalise(TraitementImagesUtils.discretize(TraitementImagesUtils.getHistogram(filteredImage)), img.getNumberOfPresentPixel());
 						String line = file.getAbsolutePath();
 				    	line+=FILE_SEPARATOR;

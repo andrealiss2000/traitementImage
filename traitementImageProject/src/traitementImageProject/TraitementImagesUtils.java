@@ -268,19 +268,25 @@ public class TraitementImagesUtils {
 					 dbFiles.addAll(Arrays.asList(file.listFiles()));
 				 }else if(file.isFile()) dbFiles.add(file);
 		      }
-				Map<Double,String> result = new TreeMap<>(Comparator.reverseOrder());
+				Map<Double,String> result = new TreeMap<>();
+				Map<Double,String> result2 = new TreeMap<>();
 			 //Map<Double,String> distances = processImages(dbFiles, query);
 			 Map<Double,String> distances = processImagesFile(query);
-			 int cpt =0; 
+			 
 			 for (Map.Entry<Double, String> entry : distances.entrySet()) {
-				 if(cpt < 10) {
 					 result.put(entry.getKey(), entry.getValue());
+			       
+			    }
+			 int cpt =0; 
+			 for (Map.Entry<Double, String> entry : result.entrySet()) {
+				 if(cpt < 10) {
+					 result2.put(entry.getKey(), entry.getValue());
 					 cpt++;
 				 }
 			       
 			    }
 			 
-			return result;
+			return result2;
 		}
 		
 		
@@ -309,7 +315,7 @@ public class TraitementImagesUtils {
 
 		public static Map processImagesFile(Image queryImage) {
 			double[][] queryHistogram = getHistogram(queryImage);
-			queryHistogram = normalise(discretize(getHistogram(queryImage)), queryImage.getNumberOfPresentPixel());
+			double[][] normalizedQueryHistogram = normalise(discretize(getHistogram(queryImage)), queryImage.getNumberOfPresentPixel());
 			Map<Double,String> distances = new TreeMap<>();
 			
 			//lecture du fichier 
@@ -327,11 +333,11 @@ public class TraitementImagesUtils {
 			        		 histogram[cpt][0] = Double.valueOf(data[i].split(Indexation.getRGB_SEPARATOR())[0]);
 			        		 histogram[cpt][1] = Double.valueOf(data[i].split(Indexation.getRGB_SEPARATOR())[1]);
 			        		 histogram[cpt][2] = Double.valueOf(data[i].split(Indexation.getRGB_SEPARATOR())[2]);
-			        		 
 			        		 cpt++;
 			        	 }
-			        	 double dist = getDistance(queryHistogram, histogram);
+			        	 double dist = getDistance(normalizedQueryHistogram, histogram);
 		     			 distances.put(dist, fileName);
+			        	
 			        }
 			       
 			      }
@@ -340,7 +346,6 @@ public class TraitementImagesUtils {
 			      System.out.println("An error occurred.");
 			      e.printStackTrace();
 			    }
-			
 			
 			return distances; 
 			
