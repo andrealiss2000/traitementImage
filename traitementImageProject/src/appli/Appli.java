@@ -1,11 +1,18 @@
 package appli;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import javax.media.jai.operator.MinDescriptor;
+import javax.swing.ImageIcon;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
 
 import fr.unistra.pelican.Image;
 import fr.unistra.pelican.algorithms.visualisation.Viewer2D;
+import ihm.Result;
 import traitementImageProject.HistogramTools;
 import traitementImageProject.Indexation;
 import traitementImageProject.NoiseTools;
@@ -24,38 +31,23 @@ public class Appli {
 			//return;
 		}
 		
-		
-		//Test filtre médian 
-		Image couleur = TraitementImagesUtils.readImage("C:\\Users\\Andréa\\Desktop\\maldive.jpg");
-		Image newImage = NoiseTools.addNoise(couleur, 0.2);
-		//Viewer2D.exec(newImage);
-		
-		Image result = TraitementImagesUtils.filtreMedian(newImage);
-		//Viewer2D.exec(result);
-		
-		double[][] histo = TraitementImagesUtils.getHistogram(result);
-		double[][] newHisto = TraitementImagesUtils.discretize(histo); 
-		TraitementImagesUtils.displayHistogram(newHisto);
-		
-		//test normalisation 
-		int nbPixels = result.getNumberOfPresentPixel();
-		TraitementImagesUtils.displayHistogram(TraitementImagesUtils.normalise(newHisto, nbPixels));
-		
 		//test similarité
-			       
-	
+		Image result;       
+		List<String> imagesResultat = new ArrayList<>();
 		Indexation.writeHistograms();
 		result = TraitementImagesUtils.getImageQuery();
 		if(result.getBDim() == 3) {
 			Map<Double, String> similar = TraitementImagesUtils.getSimilarImages(result);
 			for (Map.Entry<Double, String> entry : similar.entrySet()) {
 		        System.out.println("Distance : " + entry.getKey() + " Fichier : " + entry.getValue());
+		        imagesResultat.add(entry.getValue());
 		    }
 			
-			System.out.println("Qualité du système : "+ QualityEvaluator.evaluate(QUERY_CATEGORY, similar) + "% de fiabilité");
+			System.out.println("Qualité du système : "+ QualityEvaluator.evaluate(QUERY_CATEGORY, similar) + "% de fiabilité dans l'espace RGB");
 		}
 		
-	
+		Result r = new Result(TraitementImagesUtils.getImageQueryPath(), imagesResultat);
+
 	}
 
 }
