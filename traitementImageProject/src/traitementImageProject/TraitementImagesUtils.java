@@ -19,6 +19,9 @@ public class TraitementImagesUtils {
 	private static String DB_PATH="database\\";
 	private static String QUERY_PATH="query\\";
 	private static int FACTOR=25;
+	private static int FACTORHSV=36;
+	private static String HSV="hsv"; 
+	private static String RGB="rgb";
 
 
 
@@ -159,6 +162,84 @@ public class TraitementImagesUtils {
 			return histogram;
 			
 		}
+		
+		/**
+		 * Histogramme d'une image
+		 * @param greyImage
+		 * @return
+		 */
+		public static double[][] getHistogramHSV(Image image) {
+			ByteImage img = (ByteImage) image;
+			double[][] histogram = new double[361][3];
+			
+			//initialisation de toutes les cases à 0
+			for(int i=0; i < histogram.length; i++) {
+					histogram[i][0] = 0;
+					histogram[i][1] = 0;
+					histogram[i][2] = 0;
+			}
+			
+			
+			//parcourir l'ensemble des pixels 
+			for(int x=0; x<img.getXDim(); x++) {
+				for(int y=0; y<img.getYDim();y++) {
+					int r = img.getPixelXYBByte(x, y, 0); 
+					int g = img.getPixelXYBByte(x, y, 1); 
+					int b = img.getPixelXYBByte(x, y, 2); 
+					
+					List<Double> hsvList = convertToHSV(r,g,b);
+					
+					int h = (int) Math.round(hsvList.get(0)); // valeur entre 0 et 360
+					int s = (int) Math.round(hsvList.get(1)*100); // 95 puis diviser par 100 pour avoir une valeur entre 0 et 1
+					int v = (int) Math.round(hsvList.get(2)*100); // 15 puis diviser par 100 pour avoir une valeur entre 0 et 1 
+			 
+					histogram[h][0] +=1;  
+					histogram[s][1] +=1; 
+					histogram[v][2] +=1; 
+				}
+			}
+			return histogram;
+		}
+		
+		private static List<Double> convertToHSV(int r, int g, int b) {
+			List<Double> hsvList = new ArrayList<Double>();
+			
+			double rHSV = r/255.0; 
+			double gHSV = g/255.0; 
+			double bHSV = b/255.0;  
+			
+			double max = Math.max(r, Math.max(g, b));
+			double min = Math.min(r, Math.max(g, b));
+			double h = 0.0;
+			double s = 0.0;
+			double v = 0.0;
+			
+			double sqrt = Math.pow(r, 2) + Math.pow(g, 2) + Math.pow(b, 2) - r*g - r*b - g*b; 
+			double gD = g/2.0;
+			double bD = b/2.0;  
+			
+			double acos = Math.toDegrees(Math.acos(((r-gD-bD)/Math.sqrt(sqrt))));
+			 
+			if(g >= b) {
+				h = Math.round(acos);
+			}else if(b > g) {
+				h = Math.round(360-acos);
+			}
+			
+			if(max > 0) {
+				s = 1-(min/max);
+			}else if(max == 0) {
+				s = 0;
+			}
+			
+			v = max/255;  
+			
+			hsvList.add(h);
+			hsvList.add(s);
+			hsvList.add(v);
+			
+			return hsvList;
+		} 
 	
 		
 		public static double[][] discretize(double[][] histogram){
@@ -254,8 +335,7 @@ public class TraitementImagesUtils {
 			return newHistogram;
 		}
 		
-		public static Map getSimilarImages(Image query) {
-			
+		public static Map<Double, String> getSimilarImages(Image query, String type) {
 			//récupération des images
 			List<File> dbFiles = new ArrayList<>();//liste de toutes les images à comparer
 			//récupérer toutes les images 
@@ -268,26 +348,29 @@ public class TraitementImagesUtils {
 					 dbFiles.addAll(Arrays.asList(file.listFiles()));
 				 }else if(file.isFile()) dbFiles.add(file);
 		      }
-				Map<Double,String> result = new TreeMap<>();
-				Map<Double,String> result2 = new TreeMap<>();
-			 //Map<Double,String> distances = processImages(dbFiles, query);
-			 Map<Double,String> distances = processImagesFile(query);
-			 
-			 for (Map.Entry<Double, String> entry : distances.entrySet()) {
-					 result.put(entry.getKey(), entry.getValue());
-			       
-			    }
-			 int cpt =0; 
-			 for (Map.Entry<Double, String> entry : result.entrySet()) {
-				 if(cpt < 10) {
-					 result2.put(entry.getKey(), entry.getValue());
-					 cpt++;
-				 }
-			       
-			    }
-			 
-			return result2;
+			 Map<Double,String> result = new TreeMap<>();
+             Map<Double,String> result2 = new TreeMap<>();
+          //Map<Double,String> distances = processImages(dbFiles, query);
+          Map<Double,String> distances = processImagesFile(query, type);
+
+          for (Map.Entry<Double, String> entry : distances.entrySet()) {
+                  result.put(entry.getKey(), entry.getValue());
+
+             }
+          int cpt =0; 
+          for (Map.Entry<Double, String> entry : result.entrySet()) {
+              if(cpt < 10) {
+                  result2.put(entry.getKey(), entry.getValue());
+                  cpt++;
+              }
+
+             }
+
+         return result2;
+
 		}
+		
+	
 		
 		
 	
@@ -313,43 +396,58 @@ public class TraitementImagesUtils {
 			return distances;
 		}
 
-		public static Map processImagesFile(Image queryImage) {
-			double[][] queryHistogram = getHistogram(queryImage);
-			double[][] normalizedQueryHistogram = normalise(discretize(getHistogram(queryImage)), queryImage.getNumberOfPresentPixel());
-			Map<Double,String> distances = new TreeMap<>();
-			
-			//lecture du fichier 
-			try {
-			      File file = new File(Indexation.getINDEXES_PATH());
-			      Scanner myReader = new Scanner(file);
-			      while (myReader.hasNextLine()) {
-			        String line = myReader.nextLine();
-			        String[] data = line.split(Indexation.getFILE_SEPARATOR());
-			        if(data!=null) {
-			        	 String fileName = data[0]; 
-			        	 double[][] histogram = new double[SIZE_HISTO][3];
-			        	 int cpt=0;
-			        	 for(int i=1; i<data.length; i++) {
-			        		 histogram[cpt][0] = Double.valueOf(data[i].split(Indexation.getRGB_SEPARATOR())[0]);
-			        		 histogram[cpt][1] = Double.valueOf(data[i].split(Indexation.getRGB_SEPARATOR())[1]);
-			        		 histogram[cpt][2] = Double.valueOf(data[i].split(Indexation.getRGB_SEPARATOR())[2]);
-			        		 cpt++;
-			        	 }
-			        	 double dist = getDistance(normalizedQueryHistogram, histogram);
-		     			 distances.put(dist, fileName);
-			        	
-			        }
-			       
-			      }
-			      myReader.close();
-			    } catch (FileNotFoundException e) {
-			      System.out.println("An error occurred.");
-			      e.printStackTrace();
-			    }
-			
-			return distances; 
-			
-		}
+	public static Map processImagesFile(Image queryImage, String type) {
+		double[][] queryHistogram = getHistogram(queryImage);
+		
+		if(type == RGB) {
+			queryHistogram = normalise(discretize(getHistogram(queryImage)), queryImage.getNumberOfPresentPixel());
+		}else if(type == HSV) {
+			queryHistogram = normalise(discretizeHSV(getHistogramHSV(queryImage)), queryImage.getNumberOfPresentPixel());
+		} 
+		
+		Map<Double,String> distances = new TreeMap<>();
+		
+		//lecture du fichier 
+		try {
+			File file = null;
+			if(type == RGB) {
+				file = new File(Indexation.getINDEXES_PATH());
+			}else if(type == HSV) {
+				file = new File(Indexation.getINDEXES_PATH_HSV());
+			}
+		    
+			Scanner myReader = new Scanner(file);
+		      while (myReader.hasNextLine()) {
+		        String line = myReader.nextLine();
+		        String[] data = line.split(Indexation.getFILE_SEPARATOR());
+		        if(data!=null) {
+		        	 String fileName = data[0]; 
+		        	 double[][] histogram = new double[SIZE_HISTO][3];
+		        	 int cpt=0;
+		        	 for(int i=1; i<data.length; i++) {
+		        		 histogram[cpt][0] = Double.valueOf(data[i].split(Indexation.getRGB_SEPARATOR())[0]);
+		        		 histogram[cpt][1] = Double.valueOf(data[i].split(Indexation.getRGB_SEPARATOR())[1]);
+		        		 histogram[cpt][2] = Double.valueOf(data[i].split(Indexation.getRGB_SEPARATOR())[2]);
+		        		 
+		        		 cpt++;
+		        	 }
+		        	 double dist = 0.0;
+		        	 if(type == RGB) {
+		        		 dist = getDistance(queryHistogram, histogram);
+		        	 }else if(type == HSV) {
+		        		 dist = getDistanceHSV(queryHistogram, histogram);
+		        	 }
+	     			 distances.put(dist, fileName);
+		        }
+		       
+		      }
+		      myReader.close();
+		    } catch (FileNotFoundException e) {
+		      System.out.println("An error occurred.");
+		      e.printStackTrace();
+		    } 
+		return distances;
+	}
 
 	/**
 	 * Calcul de la distance entre deux histogrammes
@@ -375,6 +473,84 @@ public class TraitementImagesUtils {
 		}
 		
 		return 0.0;
+	}
+	
+	
+	
+	/**
+	 * Calcul de la distance entre deux histogrammes
+	 * @param histogramQuery
+	 * @param histogramImage
+	 * @return
+	 */
+	private static double getDistanceHSV(double[][] histogramQuery, double[][] histogramImage) {
+		double sumH = 0.0; // H
+		double sumS = 0.0; // S
+		double sumV = 0.0; // V
+		
+		// METHODE  1
+		
+		if(histogramImage.length == histogramQuery.length) {
+			for(int i = 0; i <histogramQuery[0].length; i++) {
+				sumH += Math.pow(histogramQuery[i][0]-histogramImage[i][0], 2);
+			}
+			
+			for (int j = 0; j < histogramQuery[1].length; j++) {
+				sumS += Math.pow(histogramQuery[j][1]-histogramImage[j][1], 2);
+				sumV += Math.pow(histogramQuery[j][2]-histogramImage[j][2], 2);
+			}
+			return Math.sqrt(sumH+sumS+sumV); 
+		}
+		 
+		
+		// METHODE 2
+		/*
+		if(histogramImage.length == histogramQuery.length) {
+			for(int i = 0; i <histogramQuery.length; i++) {
+				double x1 = histogramQuery[i][1]*Math.cos(histogramQuery[i][0]);
+				double x2 = histogramImage[i][1]*Math.cos(histogramImage[i][0]);
+				double y1 = histogramQuery[i][1]*Math.sin(histogramQuery[i][0]);
+				double y2 = histogramImage[i][1]*Math.sin(histogramImage[i][0]);
+				double z1 = histogramQuery[i][2];
+				double z2 = histogramImage[i][2];
+				
+				sumH+=Math.pow(x2-x1, 2);
+				sumS+=Math.pow(y2-y1, 2);
+				sumV+=Math.pow(z2-z1, 2); 
+				
+			}
+			double distanceH = Math.sqrt(sumH); 
+			double distanceS = Math.sqrt(sumS); 
+			double distanceV = Math.sqrt(sumV); 
+			
+			double distance = distanceH+distanceS+distanceV;
+			
+			return distance; 
+		}
+		*/
+		
+		// METHODE 3
+		/*
+		if(histogramImage.length == histogramQuery.length) {
+			for(int i = 0; i <histogramQuery.length; i++) {
+				 
+				double dh = Math.min(Math.abs(histogramImage[i][0]-histogramQuery[i][0]), 360-Math.abs(histogramImage[i][0]-histogramQuery[i][0]))/180.0;
+				double ds = Math.abs(histogramImage[i][1]-histogramQuery[i][1]);
+				double dv = Math.abs(histogramImage[i][2]-histogramQuery[i][2])/255.0;
+				
+				sumH+=dh*dh;
+				sumS+=ds*ds;
+				sumV+=dv*dv; 
+			} 
+			double distance = Math.sqrt(sumH+sumS+sumV);
+			
+			return distance; 
+		}
+		*/
+		
+		
+		return 0.0;
+		
 	}
 
 	public static void displayHistogram(double[][] histogram) {
@@ -404,6 +580,26 @@ public class TraitementImagesUtils {
 			 System.out.println("Problème lors du chargement de l'image requête");
 			 return null;
 		
+	}
+	
+	
+	public static double[][] discretizeHSV(double[][] histogramHSV){
+		double[][] newHistogram = new double [SIZE_HISTO][3];
+		
+		int start = 0;
+		int stop = FACTORHSV;  
+		for(int i=0; i < newHistogram.length; i++) { 
+			double h = getRvalues(histogramHSV, start, stop);
+			double s = getGvalues(histogramHSV, start, stop);
+			double v = getBvalues(histogramHSV, start, stop);
+			newHistogram[i][0] = h;
+			newHistogram[i][1] = s;
+			newHistogram[i][2] = v;
+			start+=FACTORHSV; 
+			stop+=FACTORHSV;
+
+		}  
+		return newHistogram;
 	}
 	
 	

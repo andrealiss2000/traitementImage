@@ -22,12 +22,14 @@ import traitementImageProject.TraitementImagesUtils;
 public class Appli {
 	
 	private static String QUERY_CATEGORY="motos";
+	private static String MODE="hsv";
 	
 	public static void main(String[] args) {
 		if(args.length!=0) {
 			QUERY_CATEGORY = args[0];
+			MODE = args[1];
 		}else {
-			System.out.println("Veuillez indiquer en paramètre la catégorie de l'image de requête");
+			System.out.println("Veuillez indiquer en paramètre la catégorie de l'image de requête + le mode de calcul des distances");
 			//return;
 		}
 		
@@ -35,19 +37,24 @@ public class Appli {
 		Image result;       
 		List<String> imagesResultat = new ArrayList<>();
 		Indexation.writeHistograms();
+		Indexation.writeHistogramsHSV();
 		result = TraitementImagesUtils.getImageQuery();
 		if(result.getBDim() == 3) {
-			Map<Double, String> similar = TraitementImagesUtils.getSimilarImages(result);
+			Map<Double, String> similar = TraitementImagesUtils.getSimilarImages(result, MODE);
 			for (Map.Entry<Double, String> entry : similar.entrySet()) {
 		        System.out.println("Distance : " + entry.getKey() + " Fichier : " + entry.getValue());
 		        imagesResultat.add(entry.getValue());
 		    }
 			
-			System.out.println("Qualité du système : "+ QualityEvaluator.evaluate(QUERY_CATEGORY, similar) + "% de fiabilité dans l'espace RGB");
+			System.out.println("Qualité du système : "+ QualityEvaluator.evaluate(QUERY_CATEGORY, similar) + "% de fiabilité dans l'espace "+ MODE);
 		}
 		
 		Result r = new Result(TraitementImagesUtils.getImageQueryPath(), imagesResultat);
 
 	}
 
+	
+	public static String getMode() {
+		return MODE;
+	}
 }
